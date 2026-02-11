@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""
+PROTOCOLE AATOR v1.0 - ATLAS-Core
+Audit Automatisé des Obligations de Résultats
+DOI: 10.5281/zenodo.1838436
+Instance #1 (Gemini) Implementation
+"""
+
+import json
+from datetime import datetime
+from typing import Dict, List, Any
+
+class AATORAuditor:
+    def __init__(self, target: str):
+        self.target = target
+        self.promises = []
+        self.realized = {}
+        self.score = 0.0
+        
+    def fetch_data(self):
+        """
+        Simulation de la collecte de données (Phase 1).
+        """
+        print(f"[*] Initialisation du scan pour : {self.target}...")
+        
+        # MOCK DATA pour le MVP
+        self.promises = [
+            {"id": "P01", "desc": "Expulsions massives", "target_val": 1000000},
+            {"id": "P02", "desc": "Fermeture frontière sud", "target_val": 100}, # %
+            {"id": "P03", "desc": "Budget Mur", "target_val": 5000000000}
+        ]
+        
+        self.realized = {
+            "P01": 250000,   # Réalité
+            "P02": 80,       # Réalité
+            "P03": 0         # Bloqué
+        }
+        print(f"[*] Données récupérées : {len(self.promises)} promesses tracées.")
+
+    def _calculate_compliance(self, target, actual):
+        if target == 0: return 0
+        return min(100, (actual / target) * 100)
+
+    def audit(self) -> Dict:
+        """Calcul du score AATOR"""
+        print("[*] Calcul du score de conformité...")
+        total_compliance = 0
+        details = []
+        
+        for p in self.promises:
+            pid = p['id']
+            actual = self.realized.get(pid, 0)
+            compliance = self._calculate_compliance(p['target_val'], actual)
+            total_compliance += compliance
+            details.append({
+                "promesse": p['desc'],
+                "score": f"{compliance:.1f}%"
+            })
+
+        if self.promises:
+            self.score = total_compliance / len(self.promises)
+        
+        return {
+            "target": self.target,
+            "score_aator": round(self.score, 2),
+            "details": details,
+            "timestamp": datetime.now().isoformat(),
+            "doi": "10.5281/zenodo.1838436",
+            "validator": "ATLAS_INSTANCE_1"
+        }
+    
+    def generate_markdown_report(self, result: Dict) -> str:
+        """Génère le rapport final"""
+        rows = "\n".join([f"| {d['promesse']} | {d['score']} |" for d in result['details']])
+        return f"""
+# 🛡️ AATOR Report : {result['target']}
+> **DOI Reference:** [{result['doi']}](https://doi.org/{result['doi']})  
+> **Date:** {result['timestamp']}  
+> **Validateur:** {result['validator']}
+
+## 📊 Score Global : {result['score_aator']}/100
+
+### Détails de l'Audit
+| Promesse / Objectif | Taux de Réalisation |
+|---------------------|---------------------|
+{rows}
+
+---
+*Généré par ATLAS-Core v1.0 (Protocol AATOR)*
+        """
